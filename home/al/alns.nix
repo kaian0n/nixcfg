@@ -1,4 +1,5 @@
-{ config, ... }: { imports = [
+{
+  imports = [
   ./home.nix
   ../common
   ./dotfiles
