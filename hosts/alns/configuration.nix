@@ -49,12 +49,6 @@
   };
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.al = {
-    isNormalUser = true;
-    description = "al";
-    extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [];
-  };
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
