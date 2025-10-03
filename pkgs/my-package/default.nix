@@ -1,0 +1,3 @@
+# pkgs/my-package/default.nix
+# Your custom nix-package
+# ...
