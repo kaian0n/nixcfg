@@ -10,6 +10,7 @@
                partitions = {
                   boot = {
                      size = "1G";
+                     type = "EF00";
                      content = {
                         type = "filesystem";
                         format = "vfat";
@@ -46,6 +47,7 @@
       zpool = {
          tank = {
             type = "zpool";
+            mode = "mirror";
             rootFsOptions = {
                compression = "lz4";
                "com.sun:auto-snapshot" = "false";
