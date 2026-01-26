@@ -1,4 +1,3 @@
-
 # /hosts/alns/configuration.nix
 { config, pkgs, ... }:
 {
@@ -10,33 +9,31 @@
    boot.loader.systemd-boot.enable = true;
    boot.loader.efi.canTouchEfiVariables = true;
 
-   boot.supportedFilesystems = [ "zfs" "exfat" ];
+   boot.supportedFilesystems = [ "zfs" "xfs" "exfat" ];  # Added xfs for media HDD
    boot.kernelModules = [ "btusb" "iwlwifi" ];
    boot.kernelPackages = pkgs.linuxPackages_latest;
    boot.zfs.package = pkgs.zfsUnstable;
-
 
    # Existing btusb tweak left intact.
    boot.extraModprobeConfig = ''
    options btusb enable_autosuspend=0
    '';
 
-   # Fix 2: Fast, compressed swap; demand-allocated; removes oomd "No swap".
+   # Fast, compressed swap; demand-allocated; removes oomd "No swap".
    zramSwap = {
       enable = true;
-      memoryPercent = 25;   # tune to taste (15–50% typical); no preallocation
+      memoryPercent = 25;
       algorithm = "zstd";
       priority = 100;
    };
 
-   # Fix 3: Ensure ZFS POSIX ACLs + efficient xattrs so journald stops warning.
-   # NOTE: Your zfs CLI does not support "zfs set -r", and acltype value is "posix".
+   # Ensure ZFS POSIX ACLs + efficient xattrs so journald stops warning.
    system.activationScripts.zfsAclAndXattr = ''
      set -eu
      ZFS=${config.boot.zfs.package}/bin/zfs
      if $ZFS list -H -o name tank >/dev/null 2>&1; then
        for fs in $($ZFS list -H -o name -t filesystem -r tank); do
-         $ZFS set acltype=posix "$fs" || true
+         $ZFS set acltype=posixacl "$fs" || true
          $ZFS set xattr=sa "$fs" || true
        done
      fi

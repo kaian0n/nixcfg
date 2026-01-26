@@ -12,7 +12,8 @@ in {
             xwayland = { force_zero_scaling = true; };
 
             exec-once = [
-               "hyprpaper -c ~/.config/hypr/hyprpaper.conf"
+               "waybar"
+               "hyprpaper"
                "hypridle"
                "wl-paste --type text --watch cliphist store"
                "wl-paste --type image --watch cliphist store"
@@ -207,5 +208,23 @@ in {
             ];
          };
       };
+
+      # Create hyprpaper config
+      # NOTE: You need to add your own wallpaper! Place an image somewhere and update the paths below.
+      # Example: cp /path/to/your/wallpaper.png ~/.config/hypr/wallpaper.png
+      home.file.".config/hypr/hyprpaper.conf".text = ''
+         # Hyprpaper configuration
+         # Uncomment and modify the lines below after adding a wallpaper image:
+         #
+         # preload = ~/.config/hypr/wallpaper.png
+         # wallpaper = ,~/.config/hypr/wallpaper.png
+         #
+         # For multiple monitors:
+         # wallpaper = HDMI-A-1,~/.config/hypr/wallpaper.png
+         # wallpaper = DP-1,~/.config/hypr/wallpaper2.png
+
+         splash = false
+         ipc = off
+      '';
    };
 }
