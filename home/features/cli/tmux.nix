@@ -33,8 +33,6 @@ in {
             setw -g pane-base-index 1
          '';
       };
-
-      # Ensure terminfo is present for tmux-256color (some themes depend on it)
-      home.packages = [ pkgs.ncurses ];
+      # Removed: pkgs.ncurses - conflicts with ghostty terminfo
    };
 }
