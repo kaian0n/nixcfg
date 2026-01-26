@@ -81,8 +81,6 @@
 
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  nix.settings.trusted-users = [ "root" "al" ];
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];
@@ -98,4 +96,3 @@
   system.stateVersion = "25.11"; # Did you read the comment?
 
 }
-
