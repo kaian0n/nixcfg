@@ -32,11 +32,7 @@
 
          theme.enable = true;
 
-         wallpaper = {
-            enable = true;
-            imagePath = "${config.home.homeDirectory}/.local/share/wallpapers/Image.png";
-            monitor = "HDMI-A-1";
-         };
+
       };
    };
 
