@@ -15,12 +15,6 @@
    boot.kernelPackages = pkgs.linuxPackages_latest;
    boot.zfs.package = pkgs.zfsUnstable;
 
-   # Fix 1: Silence AMD Sensor Fusion Hub probe failures on servers.
-   boot.blacklistedKernelModules = [
-      "pcie_mp2_amd"
-      "amd_sfh"
-      "amd_sfh_hid"
-   ];
 
    # Existing btusb tweak left intact.
    boot.extraModprobeConfig = ''
