@@ -19,7 +19,7 @@
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICqyyU56DPcUBpsvOxSZmLSvfxj5ltrNNR0sFMeOe4Xl alex@alns"
     ];
-    packages = [ inputs.home-manager.packages.${pkgs.system}.home-manager ];
   };
-  home-manager.users.al = import ../../../home/al/${config.networking.hostName}.nix;
+  home-manager.users.al = import al/${config.networking.hostName}.nix;
+
 }
