@@ -9,10 +9,10 @@
    boot.loader.systemd-boot.enable = true;
    boot.loader.efi.canTouchEfiVariables = true;
 
-   boot.supportedFilesystems = [ "zfs" "xfs" "exfat" ];  # Added xfs for media HDD
+   boot.supportedFilesystems = [ "zfs" "xfs" "exfat" ];
    boot.kernelModules = [ "btusb" "iwlwifi" ];
    boot.kernelPackages = pkgs.linuxPackages_latest;
-   boot.zfs.package = pkgs.zfsUnstable;
+   boot.zfs.package = pkgs.zfs_unstable;
 
    # Existing btusb tweak left intact.
    boot.extraModprobeConfig = ''
