@@ -8,7 +8,7 @@
   ];
   home-manager = {
     useUserPackages = true;
-    extraSpecialArgs = {inherit inputs outputs};
+    extraSpecialArgs = {inherit inputs outputs; };
   };
   nixpkgs = {
     # You can add overlays here
@@ -51,5 +51,5 @@
     registry = (lib.mapAttrs (_: flake: { inherit flake; }))
       ((lib.filterAttrs (_: lib.isType "flake")) inputs);
     nixPath = [ "/etc/nix/path" ];
+    };
   };
-}
