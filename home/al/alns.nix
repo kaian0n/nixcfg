@@ -1,4 +1,3 @@
-{ config, ... }: { imports = [ ./home.nix ../common ]; }
 # /home/al/alns.nix
 { config, ... }:
 {
