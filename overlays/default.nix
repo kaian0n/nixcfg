@@ -1,21 +1,22 @@
-{ inputs, ... }: {
-  # This one brings our custom packages from the 'pkgs' directory
-  additions = final: _prev: import ../pkgs { pkgs = final; };
+# /overlays/default.nix
+{ inputs, ... }:
+{
+   # Bring custom packages from ./pkgs
+   additions = final: _prev: import ../pkgs { pkgs = final; };
 
-  # This one contains whatever you want to overlay
-  # You can change versions, add patches, set compilation flags, anything really.
-  # https://nixos.wiki/wiki/Overlays
-  modifications = final: prev:
-    {
-      # example = prev.example.overrideAttrs (oldAttrs: rec {
-      # ...
-      # });
-    };
+   # Reserved for future overrides
+   modifications = final: prev: { };
 
-  stable-packages = final: _prev: {
-    stable = import inputs.nixpkgs-stable {
-      system = final.system;
-      config.allowUnfree = true;
-    };
-  };
+   # Stable channel as an attribute set
+   stable-packages = final: _prev: {
+      stable = import inputs.nixpkgs-stable {
+         system = final.system;
+         config = { allowUnfree = true; };
+      };
+   };
+
+   # Ghostty from its flake, pinned via inputs
+   ghostty = final: prev: {
+      ghostty = inputs.ghostty.packages.${prev.stdenv.hostPlatform.system}.default;
+   };
 }

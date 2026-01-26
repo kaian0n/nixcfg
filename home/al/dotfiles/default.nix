@@ -1,0 +1,8 @@
+# /home/al/dotfiles/default.nix
+{ inputs, ... }:
+{
+   home.file.".config/nvim" = {
+      source = "${inputs.dotfiles}/nvim";
+      recursive = true;
+   };
+}

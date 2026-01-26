@@ -1,100 +1,112 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
 
+# /hosts/alns/configuration.nix
 { config, pkgs, ... }:
-
 {
-  imports =
-    [ # Include the results of the hardware scan.
+   imports = [
+      ./disko-config.nix
       ./hardware-configuration.nix
-    ];
+   ];
 
-  # Bootloader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
+   boot.loader.systemd-boot.enable = true;
+   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "alns"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+   boot.supportedFilesystems = [ "zfs" "exfat" ];
+   boot.kernelModules = [ "btusb" "iwlwifi" ];
+   boot.kernelPackages = pkgs.linuxPackages_latest;
+   boot.zfs.package = pkgs.zfsUnstable;
 
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+   # Fix 1: Silence AMD Sensor Fusion Hub probe failures on servers.
+   boot.blacklistedKernelModules = [
+      "pcie_mp2_amd"
+      "amd_sfh"
+      "amd_sfh_hid"
+   ];
 
-  # Enable networking
-  networking.networkmanager.enable = true;
+   # Existing btusb tweak left intact.
+   boot.extraModprobeConfig = ''
+   options btusb enable_autosuspend=0
+   '';
 
-  # Set your time zone.
-  time.timeZone = "America/Boise";
+   # Fix 2: Fast, compressed swap; demand-allocated; removes oomd "No swap".
+   zramSwap = {
+      enable = true;
+      memoryPercent = 25;   # tune to taste (15–50% typical); no preallocation
+      algorithm = "zstd";
+      priority = 100;
+   };
 
-  # Select internationalisation properties.
-  i18n.defaultLocale = "en_US.UTF-8";
+   # Fix 3: Ensure ZFS POSIX ACLs + efficient xattrs so journald stops warning.
+   # NOTE: Your zfs CLI does not support "zfs set -r", and acltype value is "posix".
+   system.activationScripts.zfsAclAndXattr = ''
+     set -eu
+     ZFS=${config.boot.zfs.package}/bin/zfs
+     if $ZFS list -H -o name tank >/dev/null 2>&1; then
+       for fs in $($ZFS list -H -o name -t filesystem -r tank); do
+         $ZFS set acltype=posix "$fs" || true
+         $ZFS set xattr=sa "$fs" || true
+       done
+     fi
+   '';
 
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "en_US.UTF-8";
-    LC_IDENTIFICATION = "en_US.UTF-8";
-    LC_MEASUREMENT = "en_US.UTF-8";
-    LC_MONETARY = "en_US.UTF-8";
-    LC_NAME = "en_US.UTF-8";
-    LC_NUMERIC = "en_US.UTF-8";
-    LC_PAPER = "en_US.UTF-8";
-    LC_TELEPHONE = "en_US.UTF-8";
-    LC_TIME = "en_US.UTF-8";
-  };
+   networking.hostName = "alns";
+   networking.hostId = builtins.substring 0 8 (builtins.hashString "sha256" config.networking.hostName);
+   networking.networkmanager.enable = true;
 
-  # Configure keymap in X11
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "";
-  };
+   time.timeZone = "America/Boise";
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.al = {
-    isNormalUser = true;
-    description = "al";
-    extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [];
-  };
+   i18n.defaultLocale = "en_US.UTF-8";
+   i18n.extraLocaleSettings = {
+      LC_ADDRESS = "en_US.UTF-8";
+      LC_IDENTIFICATION = "en_US.UTF-8";
+      LC_MEASUREMENT = "en_US.UTF-8";
+      LC_MONETARY = "en_US.UTF-8";
+      LC_NAME = "en_US.UTF-8";
+      LC_NUMERIC = "en_US.UTF-8";
+      LC_PAPER = "en_US.UTF-8";
+      LC_TELEPHONE = "en_US.UTF-8";
+      LC_TIME = "en_US.UTF-8";
+   };
 
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
+   services.xserver.xkb = {
+      layout = "us";
+      variant = "";
+   };
 
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
-  environment.systemPackages = with pkgs; [
+   hardware.bluetooth.enable = true;
+   hardware.bluetooth.powerOnBoot = true;
+   hardware.enableRedistributableFirmware = true;
+   services.blueman.enable = true;
 
-    neovim
-    git
-  ];
+   environment.systemPackages = with pkgs; [
+      git
+      usbutils
+      pciutils
+      libva-utils
+      ffmpeg
+   ];
 
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
+   services.openssh = {
+      enable = true;
+      settings.PermitRootLogin = "no";
+      allowSFTP = true;
+   };
 
-  # List services that you want to enable:
+   programs.hyprland = {
+      enable = true;
+      xwayland.enable = true;
+   };
 
-  # Enable the OpenSSH daemon.
-  services.openssh = {
-    enable = true;
-    settings.PermitRootLogin = "no";
-    allowSFTP = true;
-  };
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
+   programs.zsh.enable = true;
 
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "25.11"; # Did you read the comment?
+   system.stateVersion = "25.11";
 
+   hardware.graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+         mesa
+         vaapiVdpau
+         libvdpau-va-gl
+         vulkan-tools
+      ];
+   };
 }

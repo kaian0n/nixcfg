@@ -1,3 +1,4 @@
+# /hosts/common/users/default.nix
 {
-  imports = [./al.nix];
+   imports = [ ./al.nix ];
 }
