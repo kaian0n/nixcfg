@@ -101,7 +101,7 @@
       vulkan-tools     # vulkaninfo
       clinfo           # OpenCL info
       ffmpeg           # General media tools
-      nvtop
+      nvtopPackages.full
    ];
 
    # Ensure GuC/HuC firmware is available
