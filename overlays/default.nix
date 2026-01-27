@@ -14,9 +14,4 @@
          config = { allowUnfree = true; };
       };
    };
-
-   # Ghostty from its flake, pinned via inputs
-   ghostty = final: prev: {
-      ghostty = inputs.ghostty.packages.${prev.stdenv.hostPlatform.system}.default;
-   };
 }
