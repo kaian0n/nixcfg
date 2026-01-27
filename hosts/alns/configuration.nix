@@ -100,8 +100,8 @@
       intel-gpu-tools  # intel_gpu_top - monitor GPU
       vulkan-tools     # vulkaninfo
       clinfo           # OpenCL info
-
       ffmpeg           # General media tools
+      nvtop
    ];
 
    # Ensure GuC/HuC firmware is available
