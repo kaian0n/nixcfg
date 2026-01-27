@@ -21,19 +21,13 @@
          flake = false;
       };
 
-      ghostty = {
-         url = "github:ghostty-org/ghostty";
-         inputs.nixpkgs.follows = "nixpkgs";
-      };
       agenix = {
-
          url = "github:ryantm/agenix";
          inputs.nixpkgs.follows = "nixpkgs";
-    };
-
+      };
    };
 
-   outputs = { self, disko, dotfiles, home-manager, nixpkgs, nixpkgs-stable, ghostty, agenix, ... } @ inputs:
+   outputs = { self, disko, dotfiles, home-manager, nixpkgs, nixpkgs-stable, agenix, ... } @ inputs:
    let
       inherit (self) outputs;
       lib = nixpkgs.lib;

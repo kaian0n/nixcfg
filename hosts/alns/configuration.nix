@@ -5,24 +5,26 @@
       ./disko-config.nix
       ./hardware-configuration.nix
    ];
+
    boot.loader.systemd-boot.enable = true;
    boot.loader.efi.canTouchEfiVariables = true;
+
    boot.supportedFilesystems = [ "zfs" "xfs" "exfat" ];
    boot.kernelModules = [ "btusb" "iwlwifi" ];
    boot.kernelPackages = pkgs.linuxPackages_latest;
    boot.zfs.package = pkgs.zfs_unstable;
-   # Existing btusb tweak left intact.
+
    boot.extraModprobeConfig = ''
    options btusb enable_autosuspend=0
    '';
-   # Fast, compressed swap; demand-allocated; removes oomd "No swap".
+
    zramSwap = {
       enable = true;
       memoryPercent = 25;
       algorithm = "zstd";
       priority = 100;
    };
-   # Ensure ZFS POSIX ACLs + efficient xattrs so journald stops warning.
+
    system.activationScripts.zfsAclAndXattr = ''
      set -eu
      ZFS=${config.boot.zfs.package}/bin/zfs
@@ -33,12 +35,14 @@
        done
      fi
    '';
+
    networking.hostName = "alns";
    networking.hostId = builtins.substring 0 8 (builtins.hashString "sha256" config.networking.hostName);
    networking.networkmanager.enable = true;
    networking.nameservers = [ "8.8.8.8" "1.1.1.1" ];
 
    time.timeZone = "America/Boise";
+
    i18n.defaultLocale = "en_US.UTF-8";
    i18n.extraLocaleSettings = {
       LC_ADDRESS = "en_US.UTF-8";
@@ -51,14 +55,11 @@
       LC_TELEPHONE = "en_US.UTF-8";
       LC_TIME = "en_US.UTF-8";
    };
-   services.xserver.xkb = {
-      layout = "us";
-      variant = "";
-   };
+
    hardware.bluetooth.enable = true;
    hardware.bluetooth.powerOnBoot = true;
    hardware.enableRedistributableFirmware = true;
-   services.blueman.enable = true;
+
    environment.systemPackages = with pkgs; [
       git
       usbutils
@@ -66,17 +67,17 @@
       libva-utils
       ffmpeg
    ];
+
    services.openssh = {
       enable = true;
       settings.PermitRootLogin = "no";
       allowSFTP = true;
    };
-   programs.hyprland = {
-      enable = true;
-      xwayland.enable = true;
-   };
+
    programs.zsh.enable = true;
+
    system.stateVersion = "25.11";
+
    hardware.graphics = {
       enable = true;
       extraPackages = with pkgs; [

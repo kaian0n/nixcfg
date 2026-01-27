@@ -6,7 +6,6 @@
       ../common
       ./dotfiles
       ../features/cli
-      ../features/desktop
    ];
 
    features = {
@@ -16,36 +15,6 @@
          bottom.enable = true;
          starship.enable = true;
          tmux.enable = true;
-      };
-      desktop = {
-         fonts.enable = true;
-
-         wayland = {
-            enable = true;
-            weatherLocation = "Boise,US-ID";
-            weatherUnit = "imperial";
-         };
-
-         hyprland.enable = true;
-         ghostty.enable = true;
-         apps.enable = true;
-
-         theme.enable = true;
-
-
-      };
-   };
-
-   wayland.windowManager.hyprland = {
-      settings = {
-         monitor = [ "HDMI-A-1,preferred,0x0,1" ];
-         workspace = [
-            "1, default:true"
-            "2"
-            "3"
-            "4"
-            "5"
-         ];
       };
    };
 }
