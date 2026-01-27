@@ -10,13 +10,22 @@
    boot.loader.efi.canTouchEfiVariables = true;
 
    boot.supportedFilesystems = [ "zfs" "xfs" "exfat" ];
-   boot.kernelModules = [ "btusb" "iwlwifi" ];
-   boot.kernelPackages = pkgs.linuxPackages_latest;
+   boot.kernelModules = [ "btusb" "iwlwifi" "kvm-intel" ];
+   boot.kernelPackages = pkgs.linuxPackages_latest;  # 6.x kernel required for Arc
    boot.zfs.package = pkgs.zfs_unstable;
 
+   # Intel Arc GPU kernel parameters
+   boot.kernelParams = [
+      "i915.force_probe=e20b"  # Arc B580 device ID
+      "i915.enable_guc=3"      # Enable GuC/HuC firmware
+   ];
+
    boot.extraModprobeConfig = ''
-   options btusb enable_autosuspend=0
+      options btusb enable_autosuspend=0
    '';
+
+   # Intel CPU microcode updates
+   hardware.cpu.intel.updateMicrocode = true;
 
    zramSwap = {
       enable = true;
@@ -60,12 +69,44 @@
    hardware.bluetooth.powerOnBoot = true;
    hardware.enableRedistributableFirmware = true;
 
+   # Intel Arc B580 Graphics
+   hardware.graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+         # Intel Arc VAAPI driver (hardware video decode/encode)
+         intel-media-driver
+
+         # VDPAU compatibility
+         libvdpau-va-gl
+
+         # OpenCL for HDR tone mapping
+         intel-compute-runtime
+
+         # Intel Video Processing Library (QSV)
+         vpl-gpu-rt
+
+         # Vulkan support for Arc
+         intel-vaapi-driver
+      ];
+   };
+
    environment.systemPackages = with pkgs; [
       git
       usbutils
       pciutils
-      libva-utils
-      ffmpeg
+
+      # GPU diagnostics
+      libva-utils      # vainfo - check VAAPI
+      intel-gpu-tools  # intel_gpu_top - monitor GPU
+      vulkan-tools     # vulkaninfo
+      clinfo           # OpenCL info
+
+      ffmpeg           # General media tools
+   ];
+
+   # Ensure GuC/HuC firmware is available
+   hardware.firmware = with pkgs; [
+      linux-firmware
    ];
 
    services.openssh = {
@@ -77,14 +118,4 @@
    programs.zsh.enable = true;
 
    system.stateVersion = "25.11";
-
-   hardware.graphics = {
-      enable = true;
-      extraPackages = with pkgs; [
-         mesa
-         libva-vdpau-driver
-         libvdpau-va-gl
-         vulkan-tools
-      ];
-   };
 }

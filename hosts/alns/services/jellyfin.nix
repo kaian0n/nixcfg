@@ -3,16 +3,18 @@
 {
    services.jellyfin = {
       enable = true;
-      openFirewall = true;  # Opens port 8096
+      openFirewall = true;  # Port 8096
    };
 
-   # Give jellyfin user access to media drive
+   # Jellyfin needs GPU access for hardware transcoding
    users.users.jellyfin.extraGroups = [ "video" "render" ];
 
-   # Hardware acceleration for transcoding (Intel QuickSync)
-   hardware.graphics.enable = true;
+   # Force Intel media driver (iHD) for Arc GPU
+   environment.sessionVariables = {
+      LIBVA_DRIVER_NAME = "iHD";
+   };
 
    environment.systemPackages = with pkgs; [
-      jellyfin-ffmpeg  # Optimized ffmpeg for Jellyfin
+      jellyfin-ffmpeg  # Jellyfin's optimized ffmpeg with QSV/VAAPI
    ];
 }
