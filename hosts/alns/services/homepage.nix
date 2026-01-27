@@ -17,9 +17,17 @@
          {
             "Media" = [
                {
+                  "Jellyfin" = {
+                     href = "http://${config.networking.hostName}:8096";
+                     icon = "jellyfin";
+                     description = "Media streaming";
+                  };
+               }
+               {
                   "Immich" = {
                      href = "http://${config.networking.hostName}:2283";
                      icon = "immich";
+                     description = "Photo management";
                   };
                }
             ];
