@@ -6,6 +6,6 @@
       ./jellyfin.nix
       ./homepage.nix
       ./postgresql-backup.nix
-      #./wireguard.nix
+      ./wireguard.nix
    ];
 }

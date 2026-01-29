@@ -27,8 +27,8 @@
 
       peers = [
          {
-            # Peer 1: Replace with actual client public key
-            publicKey = "REPLACE_WITH_CLIENT_PUBLIC_KEY";
+            # Peer 1: macOS client
+            publicKey = "NLwtV+A1t506nhDW7gnY/XHOuNPdBJVxDjlfxAzx3WU=";
             allowedIPs = [ "10.100.0.2/32" ];
             persistentKeepalive = 25;
          }
