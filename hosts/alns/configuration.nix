@@ -102,6 +102,7 @@
       clinfo           # OpenCL info
       ffmpeg           # General media tools
       nvtopPackages.intel
+      btop
    ];
 
    # Ensure GuC/HuC firmware is available
