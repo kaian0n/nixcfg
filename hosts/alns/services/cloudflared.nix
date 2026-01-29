@@ -4,8 +4,9 @@
 {
    age.secrets.cloudflared-token = {
       file = ../../../secrets/cloudflared-token.age;
-      owner = "cloudflared";
-      group = "cloudflared";
+      owner = "root";
+      group = "root";
+      mode = "0400";
    };
 
    services.cloudflared = {
