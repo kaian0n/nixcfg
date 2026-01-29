@@ -1,5 +1,6 @@
 # /hosts/common/default.nix
 { pkgs, lib, inputs, outputs, ... }:
+
 {
    imports = [
       ./extra-services
@@ -34,16 +35,12 @@
             "al"
          ];
       };
-
       gc = {
          automatic = true;
          options = "--delete-older-than 30d";
       };
-
       optimise.automatic = true;
-
       registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-
       nixPath =
          [ "/etc/nix/path" ]
          ++ lib.mapAttrsToList (name: _: "${name}=flake:${name}") flakeInputs;
@@ -75,6 +72,9 @@
       (writeShellScriptBin "vimdiff" ''
          exec ${neovim}/bin/nvim -d "$@"
       '')
+
+      # Secrets management
+      inputs.agenix.packages.${pkgs.system}.default
    ];
 
    users.defaultUserShell = pkgs.zsh;
