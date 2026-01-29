@@ -7,5 +7,6 @@
       ./homepage.nix
       ./postgresql-backup.nix
       ./wireguard.nix
+      ./cloudflared.nix
    ];
 }
