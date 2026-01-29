@@ -15,13 +15,12 @@
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
 
-      environment = {
-         TUNNEL_DNS_RESOLVERS = "1.1.1.1,8.8.8.8";
-      };
-
       script = ''
          TOKEN=$(cat ${config.age.secrets.cloudflared-token.path})
-         exec ${pkgs.cloudflared}/bin/cloudflared tunnel --no-autoupdate run --token "$TOKEN"
+         exec ${pkgs.cloudflared}/bin/cloudflared tunnel \
+           --no-autoupdate \
+           --edge-ip-version 4 \
+           run --token "$TOKEN"
       '';
 
       serviceConfig = {
