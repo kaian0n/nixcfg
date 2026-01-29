@@ -1,5 +1,5 @@
 # /hosts/alns/services/cloudflared.nix
-{ config, ... }:
+{ config, pkgs, ... }:
 
 {
    age.secrets.cloudflared-token = {
@@ -9,18 +9,20 @@
       mode = "0400";
    };
 
-   services.cloudflared = {
-      enable = true;
-      tunnels = {
-         "alns" = {
-            credentialsFile = config.age.secrets.cloudflared-token.path;
-            default = "http_status:404";
-            ingress = {
-               "jellyfin.alnsweb.com" = "http://localhost:8096";
-               "immich.alnsweb.com" = "http://localhost:2283";
-               "home.alnsweb.com" = "http://localhost:8080";
-            };
-         };
+   systemd.services.cloudflared = {
+      description = "Cloudflare Tunnel";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      wantedBy = [ "multi-user.target" ];
+
+      script = ''
+         TOKEN=$(cat ${config.age.secrets.cloudflared-token.path})
+         exec ${pkgs.cloudflared}/bin/cloudflared tunnel --no-autoupdate run --token "$TOKEN"
+      '';
+
+      serviceConfig = {
+         Restart = "on-failure";
+         RestartSec = "5s";
       };
    };
 }
