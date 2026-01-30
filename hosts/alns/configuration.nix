@@ -103,6 +103,8 @@
       ffmpeg           # General media tools
       nvtopPackages.intel
       btop
+      speedtest-cli
+      iperf3
    ];
 
    # Ensure GuC/HuC firmware is available
