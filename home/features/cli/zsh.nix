@@ -39,6 +39,7 @@ in {
       shellAliases = {
         ls = "eza";
         grep = "rg";
+        list_media_storage ="df -B1 --output=avail /media | awk 'NR==2 {printf "%.2f TB free on /media\n", $1/1000000000000}'";
       };
     };
   };
