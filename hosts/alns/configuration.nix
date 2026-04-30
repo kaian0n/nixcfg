@@ -14,7 +14,7 @@
 
    boot.supportedFilesystems = [ "zfs" "xfs" "exfat" ];
    boot.kernelModules = [ "iwlwifi" "kvm-intel" ];
-   boot.kernelPackages = pkgs.linuxPackages_latest;  # 6.x kernel required for Arc
+   boot.kernelPackages = pkgs.linuxPackages_6_18;  # OpenZFS-compatible LTS kernel; modern enough for Intel Arc
    boot.zfs.package = pkgs.zfs_unstable;
 
    # Intel Arc GPU kernel parameters
