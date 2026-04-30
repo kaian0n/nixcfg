@@ -14,6 +14,13 @@
       LIBVA_DRIVER_NAME = "iHD";
    };
 
+   # These directories must exist before systemd applies ReadWritePaths.
+   systemd.tmpfiles.rules = [
+      "d /var/lib/jellyfin 0750 jellyfin jellyfin - -"
+      "d /var/lib/jellyfin/log 0750 jellyfin jellyfin - -"
+      "d /var/cache/jellyfin 0750 jellyfin jellyfin - -"
+   ];
+
    systemd.services.jellyfin.serviceConfig = {
       NoNewPrivileges = true;
       PrivateTmp = true;
@@ -29,18 +36,20 @@
       SystemCallArchitectures = "native";
 
       # Jellyfin should be able to read media, but not rewrite the media disk by default.
-      ReadOnlyPaths = [ "/media" ];
+      # The leading "-" means: do not fail startup if /media is temporarily absent.
+      ReadOnlyPaths = [ "-/media" ];
+
+      # With ProtectSystem=strict, the filesystem is read-only unless explicitly opened.
+      # Jellyfin needs these writable for its database, config, logs, cache, and transcode cache.
       ReadWritePaths = [
          "/var/lib/jellyfin"
          "/var/cache/jellyfin"
-         "/var/log/jellyfin"
       ];
 
-      # Hardware transcoding needs access to Intel GPU render devices.
+      # Hardware transcoding needs DRM/render device access.
       DevicePolicy = "closed";
       DeviceAllow = [
-         "/dev/dri/renderD* rwm"
-         "/dev/dri/card* rwm"
+         "char-drm rw"
       ];
    };
 
