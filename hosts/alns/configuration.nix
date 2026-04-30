@@ -1,4 +1,4 @@
-# /hosts/alns/configuration.nix
+ # /hosts/alns/configuration.nix
 { config, pkgs, ... }:
 {
    imports = [
@@ -6,11 +6,14 @@
       ./hardware-configuration.nix
    ];
 
-   boot.loader.systemd-boot.enable = true;
+   boot.loader.systemd-boot = {
+      enable = true;
+      configurationLimit = 10;
+   };
    boot.loader.efi.canTouchEfiVariables = true;
 
    boot.supportedFilesystems = [ "zfs" "xfs" "exfat" ];
-   boot.kernelModules = [ "btusb" "iwlwifi" "kvm-intel" ];
+   boot.kernelModules = [ "iwlwifi" "kvm-intel" ];
    boot.kernelPackages = pkgs.linuxPackages_latest;  # 6.x kernel required for Arc
    boot.zfs.package = pkgs.zfs_unstable;
 
@@ -19,10 +22,6 @@
       "i915.force_probe=e20b"  # Arc B580 device ID
       "i915.enable_guc=3"      # Enable GuC/HuC firmware
    ];
-
-   boot.extraModprobeConfig = ''
-      options btusb enable_autosuspend=0
-   '';
 
    # Intel CPU microcode updates
    hardware.cpu.intel.updateMicrocode = true;
@@ -48,7 +47,8 @@
    networking.hostName = "alns";
    networking.hostId = builtins.substring 0 8 (builtins.hashString "sha256" config.networking.hostName);
    networking.networkmanager.enable = true;
-   networking.nameservers = [ "8.8.8.8" "1.1.1.1" ];
+   networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
+   networking.firewall.enable = true;
 
    time.timeZone = "America/Boise";
 
@@ -65,8 +65,8 @@
       LC_TIME = "en_US.UTF-8";
    };
 
-   hardware.bluetooth.enable = true;
-   hardware.bluetooth.powerOnBoot = true;
+   hardware.bluetooth.enable = false;
+   hardware.bluetooth.powerOnBoot = false;
    hardware.enableRedistributableFirmware = true;
 
    # Intel Arc B580 Graphics
@@ -114,8 +114,19 @@
 
    services.openssh = {
       enable = true;
-      settings.PermitRootLogin = "no";
       allowSFTP = true;
+      settings = {
+         PermitRootLogin = "no";
+         PubkeyAuthentication = true;
+         PasswordAuthentication = false;
+         KbdInteractiveAuthentication = false;
+         PermitEmptyPasswords = false;
+         X11Forwarding = false;
+         AllowAgentForwarding = false;
+         AllowTcpForwarding = "no";
+         ClientAliveInterval = 300;
+         ClientAliveCountMax = 2;
+      };
    };
 
    programs.zsh.enable = true;

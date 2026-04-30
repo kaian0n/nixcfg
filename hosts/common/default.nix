@@ -18,7 +18,7 @@
       overlays = [
          outputs.overlays.additions
          outputs.overlays.modifications
-         outputs.overlays.stable-packages
+         outputs.overlays.unstable-packages
       ];
       config = {
          allowUnfree = true;
@@ -30,13 +30,19 @@
    in {
       settings = {
          experimental-features = [ "nix-command" "flakes" ];
+         sandbox = true;
+         allowed-users = [
+            "root"
+            "@wheel"
+            "al"
+         ];
          trusted-users = [
             "root"
-            "al"
          ];
       };
       gc = {
          automatic = true;
+         dates = "weekly";
          options = "--delete-older-than 30d";
       };
       optimise.automatic = true;
@@ -49,8 +55,6 @@
    systemd.tmpfiles.rules = [
       "d /etc/nix/path 0755 root root - -"
    ];
-
-   boot.enableContainers = true;
 
    programs.neovim = {
       enable = true;

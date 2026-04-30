@@ -3,10 +3,10 @@
    services.immich = {
       enable = true;
 
-      # network
-      host = "0.0.0.0";   # keep v4 + LAN bind (use "127.0.0.1" if you want local-only)
+      # Keep Immich private unless you explicitly publish it through Cloudflare Access or WireGuard.
+      host = "127.0.0.1";
       port = 2283;
-      openFirewall = true;
+      openFirewall = false;
 
       # data
       mediaLocation = "/var/lib/immich";

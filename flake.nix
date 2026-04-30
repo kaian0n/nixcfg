@@ -3,11 +3,14 @@
    description = "alns nix flake";
 
    inputs = {
-      nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-      nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-25.05";
+      # Use the current stable NixOS branch for the server.
+      nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+
+      # Keep unstable available explicitly for packages that genuinely need it.
+      nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
       home-manager = {
-         url = "github:nix-community/home-manager";
+         url = "github:nix-community/home-manager/release-25.11";
          inputs.nixpkgs.follows = "nixpkgs";
       };
 
@@ -27,16 +30,12 @@
       };
    };
 
-   outputs = { self, disko, dotfiles, home-manager, nixpkgs, nixpkgs-stable, agenix, ... } @ inputs:
+   outputs = { self, disko, dotfiles, home-manager, nixpkgs, nixpkgs-unstable, agenix, ... } @ inputs:
    let
       inherit (self) outputs;
       lib = nixpkgs.lib;
       systems = [
-         "aarch64-linux"
-         "i686-linux"
          "x86_64-linux"
-         "aarch64-darwin"
-         "x86_64-darwin"
       ];
       forAllSystems = lib.genAttrs systems;
    in {
@@ -48,6 +47,7 @@
 
       nixosConfigurations = {
          alns = nixpkgs.lib.nixosSystem {
+            system = "x86_64-linux";
             specialArgs = { inherit inputs outputs; };
             modules = [
                ./hosts/alns

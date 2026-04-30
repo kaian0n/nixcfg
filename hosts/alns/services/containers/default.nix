@@ -1,7 +1,5 @@
 # /hosts/alns/services/containers/default.nix
 {
-   imports = [
-      ./echo.nix
-      ./nginx.nix
-    ];
+   # No default containers are imported here.
+   imports = [ ];
 }

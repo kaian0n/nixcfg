@@ -2,10 +2,18 @@
 { config, pkgs, ... }:
 
 {
+   users.groups.cloudflared = { };
+   users.users.cloudflared = {
+      isSystemUser = true;
+      group = "cloudflared";
+      home = "/var/lib/cloudflared";
+      createHome = true;
+   };
+
    age.secrets.cloudflared-token = {
       file = ../../../secrets/cloudflared-token.age;
-      owner = "root";
-      group = "root";
+      owner = "cloudflared";
+      group = "cloudflared";
       mode = "0400";
    };
 
@@ -15,30 +23,33 @@
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
 
-      environment = {
-         # Force Go resolver to use these DNS servers
-         GODEBUG = "netdns=go";
-      };
-
       serviceConfig = {
+         ExecStart = "${pkgs.cloudflared}/bin/cloudflared tunnel --no-autoupdate --protocol auto run --token-file ${config.age.secrets.cloudflared-token.path} --dns-resolver-addrs 1.1.1.1:53 --dns-resolver-addrs 1.0.0.1:53";
          Restart = "on-failure";
-         RestartSec = "5s";
-         # Use systemd's DNS override for this unit
-         BindReadOnlyPaths = [
-            "${pkgs.writeText "resolv.conf" ''
-               nameserver 8.8.8.8
-               nameserver 1.1.1.1
-            ''}:/etc/resolv.conf"
-         ];
-      };
+         RestartSec = "10s";
 
-      script = ''
-         TOKEN=$(cat ${config.age.secrets.cloudflared-token.path})
-         exec ${pkgs.cloudflared}/bin/cloudflared tunnel \
-           --no-autoupdate \
-           --edge-ip-version 4 \
-           --protocol http2 \
-           run --token "$TOKEN"
-      '';
+         User = "cloudflared";
+         Group = "cloudflared";
+         UMask = "0077";
+
+         NoNewPrivileges = true;
+         PrivateTmp = true;
+         PrivateDevices = true;
+         ProtectHome = true;
+         ProtectSystem = "strict";
+         ProtectClock = true;
+         ProtectControlGroups = true;
+         ProtectKernelLogs = true;
+         ProtectKernelModules = true;
+         ProtectKernelTunables = true;
+         RestrictSUIDSGID = true;
+         LockPersonality = true;
+         MemoryDenyWriteExecute = true;
+         CapabilityBoundingSet = "";
+         AmbientCapabilities = "";
+         RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
+         SystemCallArchitectures = "native";
+         SystemCallFilter = [ "@system-service" "~@privileged" ];
+      };
    };
 }

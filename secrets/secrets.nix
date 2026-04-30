@@ -7,6 +7,7 @@ let
    allHosts = [ alns ];
    all = allUsers ++ allHosts;
 in {
+   "al-password-hash.age".publicKeys = all;
    "wireguard-private-key.age".publicKeys = all;
    "cloudflared-token.age".publicKeys = all;
 }

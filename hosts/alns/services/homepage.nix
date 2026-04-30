@@ -1,11 +1,10 @@
 # /hosts/alns/services/homepage.nix
 { config, lib, ... }:
 {
-   systemd.services.homepage-dashboard.environment = { HOMEPAGE_ALLOWED_HOSTS = lib.mkForce "*"; };
-
    services.homepage-dashboard = {
       enable = true;
       listenPort = 8080;
+      allowedHosts = "localhost:8080,127.0.0.1:8080,${config.networking.hostName}:8080";
       customCSS = ''
          :root {
            --accent: #ff3f00;
@@ -34,6 +33,4 @@
          }
       ];
    };
-
-   networking.firewall.allowedTCPPorts = [ 8080 ];
 }
