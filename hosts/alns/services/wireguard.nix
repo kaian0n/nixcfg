@@ -19,7 +19,7 @@
       peers = [
          {
             # Peer 1: macOS client
-            publicKey = "NLwtV+A1t506nhDW7gnY/XHOuNPdBJVxDjlfxAzx3WU=";
+            publicKey = "OsOhgLfwCpQSTtzacIKbV2RGLWIFBHXBkt/4066+i18=";
             allowedIPs = [ "10.100.0.2/32" ];
             persistentKeepalive = 25;
          }
