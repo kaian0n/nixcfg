@@ -35,6 +35,11 @@ in {
       # Use local PostgreSQL and Redis managed by the NixOS module.
       database.createLocally = true;
       configureRedis = true;
+      caching.redis = true;
+      caching.apcu = true;
+
+      # The default is 8; Nextcloud is warning that this is nearly full.
+      phpOptions."opcache.interned_strings_buffer" = "32";
 
       # Initial admin user. The password file is only used during first setup.
       config = {
@@ -54,10 +59,24 @@ in {
          overwriteprotocol = "https";
          "overwrite.cli.url" = "https://${nextcloudHostName}";
 
+         # US phone-number validation default.
          default_phone_region = "US";
+
+         # Run heavy background jobs starting at 09:00 UTC, which is 03:00 MDT.
+         maintenance_window_start = 9;
 
          # Avoid public user profile pages by default.
          "profile.enabled" = false;
+
+         # Make cache settings explicit. The NixOS module also sets these when
+         # configureRedis = true, but keeping them here makes the intent obvious.
+         "memcache.local" = "\\OC\\Memcache\\APCu";
+         "memcache.distributed" = "\\OC\\Memcache\\Redis";
+         "memcache.locking" = "\\OC\\Memcache\\Redis";
+         redis = {
+            host = config.services.redis.servers.nextcloud.unixSocket;
+            port = 0;
+         };
       };
    };
 
