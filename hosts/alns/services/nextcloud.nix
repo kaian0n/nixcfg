@@ -26,7 +26,7 @@ in {
       # Keep all Nextcloud state on /var, which is on the encrypted SSD-backed ZFS pool.
       # Do not point this at /media; /media is the HDD-backed Jellyfin disk.
       home = "/var/lib/nextcloud";
-      datadir = "/var/lib/nextcloud";
+      datadir = "/var/lib/nextcloud/data";
 
       # Origin-side upload limits. Cloudflare may still impose its own request-size limits.
       maxUploadSize = "16G";

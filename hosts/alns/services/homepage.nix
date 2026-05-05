@@ -22,11 +22,15 @@
                      description = "Media streaming";
                   };
                }
+            ];
+         }
+         {
+            "Cloud" = [
                {
-                  "Immich" = {
-                     href = "http://${config.networking.hostName}:2283";
-                     icon = "immich";
-                     description = "Photo management";
+                  "Nextcloud" = {
+                     href = "https://nc.alnsweb.com";
+                     icon = "nextcloud";
+                     description = "Files, photos, and sync";
                   };
                }
             ];
