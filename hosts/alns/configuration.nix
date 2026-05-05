@@ -1,4 +1,4 @@
- # /hosts/alns/configuration.nix
+# /hosts/alns/configuration.nix
 { config, pkgs, ... }:
 {
    imports = [
@@ -49,6 +49,9 @@
    networking.networkmanager.enable = true;
    networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
    networking.firewall.enable = true;
+   networking.firewall.interfaces.eno1.allowedTCPPorts = [
+      22  # SSH from the local LAN only.
+   ];
 
    time.timeZone = "America/Boise";
 
@@ -114,8 +117,10 @@
 
    services.openssh = {
       enable = true;
+      openFirewall = false;
       allowSFTP = true;
       settings = {
+         AllowUsers = [ "al" ];
          PermitRootLogin = "no";
          PubkeyAuthentication = true;
          PasswordAuthentication = false;
@@ -124,6 +129,11 @@
          X11Forwarding = false;
          AllowAgentForwarding = false;
          AllowTcpForwarding = "no";
+         AllowStreamLocalForwarding = "no";
+         PermitTunnel = "no";
+         PermitUserEnvironment = false;
+         MaxAuthTries = 3;
+         LoginGraceTime = 30;
          ClientAliveInterval = 300;
          ClientAliveCountMax = 2;
       };

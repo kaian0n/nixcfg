@@ -34,7 +34,6 @@
          allowed-users = [
             "root"
             "@wheel"
-            "al"
          ];
          trusted-users = [
             "root"

@@ -26,22 +26,12 @@
       ];
    };
 
-   networking.nat = {
-      enable = true;
-      externalInterface = "eno1";
-      internalInterfaces = [ "wg0" ];
-   };
-
-   boot.kernel.sysctl = {
-      "net.ipv4.ip_forward" = 1;
-   };
-
    networking.firewall = {
-      allowedUDPPorts = [ 51820 ];
+      interfaces.eno1.allowedUDPPorts = [
+         51820  # Public WireGuard endpoint from the router port-forward.
+      ];
       interfaces.wg0.allowedTCPPorts = [
-         22    # SSH admin over VPN
-         8080  # Homepage over VPN
-         8096  # Jellyfin over VPN
+         22  # SSH admin over WireGuard.
       ];
    };
 
