@@ -8,6 +8,7 @@ let
    all = allUsers ++ allHosts;
 in {
    "al-password-hash.age".publicKeys = all;
+   "nextcloud-admin-pass.age".publicKeys = all;
    "wireguard-private-key.age".publicKeys = all;
    "cloudflared-token.age".publicKeys = all;
 }
