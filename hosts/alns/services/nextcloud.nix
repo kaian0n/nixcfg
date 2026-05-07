@@ -20,6 +20,11 @@ in {
       # The NixOS module also adds this as a trusted Nextcloud domain.
       hostName = nextcloudHostName;
 
+      # Nix owns the Nextcloud app directories. Do not let the web UI
+      # install or update apps into read-only Nix store paths.
+      appstoreEnable = false;
+      autoUpdateApps.enable = false;
+
       # Tell Nextcloud/PHP that the external-facing URL is HTTPS.
       https = true;
 
@@ -68,6 +73,9 @@ in {
          # Avoid public user profile pages by default.
          "profile.enabled" = false;
 
+         # No SMTP for now. Create local users with passwords instead of emailed invites.
+         mail_smtpmode = "null";
+
          # Make cache settings explicit. The NixOS module also sets these when
          # configureRedis = true, but keeping them here makes the intent obvious.
          "memcache.local" = "\\OC\\Memcache\\APCu";
@@ -78,6 +86,28 @@ in {
             port = 0;
          };
       };
+   };
+
+   # Do not send welcome emails while SMTP is intentionally disabled.
+   # This makes user creation work with a local password-only workflow.
+   systemd.services.nextcloud-disable-new-user-email = {
+      description = "Disable Nextcloud welcome email for new local users";
+      after = [ "nextcloud-setup.service" ];
+      requires = [ "nextcloud-setup.service" ];
+      wantedBy = [ "multi-user.target" ];
+
+      environment = {
+         USER = "root";
+      };
+
+      serviceConfig = {
+         Type = "oneshot";
+      };
+
+      script = ''
+         ${config.services.nextcloud.occ}/bin/nextcloud-occ \
+            config:app:set core newUser.sendEmail --value no
+      '';
    };
 
    # The Nextcloud module creates this nginx virtual host.
