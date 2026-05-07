@@ -64,6 +64,14 @@ in {
          overwriteprotocol = "https";
          "overwrite.cli.url" = "https://${nextcloudHostName}";
 
+         # US language/locale defaults.
+         # default_locale handles users without their own locale.
+         # force_locale locks every user to US locale, which makes the dashboard
+         # weather widget use Fahrenheit instead of Celsius.
+         default_language = "en";
+         default_locale = "en_US";
+         force_locale = "en_US";
+
          # US phone-number validation default.
          default_phone_region = "US";
 
