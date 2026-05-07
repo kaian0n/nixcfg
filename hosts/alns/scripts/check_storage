@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-   cat <<EOF
+   cat <<EOF_USAGE
 Usage:
   check_storage nextcloud
   check_storage jellyfin
@@ -10,7 +10,7 @@ Usage:
 Commands:
   nextcloud  Show Nextcloud filesystem/ZFS storage and Nextcloud account quota storage.
   jellyfin   Show available storage on /media, the Jellyfin media disk.
-EOF
+EOF_USAGE
 }
 
 as_root() {
@@ -39,7 +39,7 @@ run_maybe_root() {
 }
 
 human_bytes() {
-   numfmt --to=iec --suffix=B "$1"
+   numfmt --to=iec --suffix=B --format="%.2f" "$1"
 }
 
 df_value() {
@@ -55,11 +55,36 @@ df_value() {
       | awk 'NR == 2 { print $1 }'
 }
 
+print_precise_df_table() {
+   local source
+   local fstype
+   local total
+   local used
+   local avail
+   local pcent
+   local target
+
+   source="$1"
+   fstype="$2"
+   total="$3"
+   used="$4"
+   avail="$5"
+   pcent="$6"
+   target="$7"
+
+   echo
+   printf '%-18s %-8s %12s %12s %12s %6s %s\n' \
+      "Filesystem" "Type" "Size" "Used" "Avail" "Use%" "Mounted on"
+   printf '%-18s %-8s %12s %12s %12s %6s %s\n' \
+      "$source" "$fstype" "$(human_bytes "$total")" "$(human_bytes "$used")" "$(human_bytes "$avail")" "$pcent" "$target"
+}
+
 print_mount_and_df() {
    local path
    local use_root
    local source
    local fstype
+   local target
    local total
    local used
    local avail
@@ -75,6 +100,7 @@ print_mount_and_df() {
 
    source="$(run_maybe_root "$use_root" findmnt -no SOURCE -T "$path" || true)"
    fstype="$(run_maybe_root "$use_root" findmnt -no FSTYPE -T "$path" || true)"
+   target="$(run_maybe_root "$use_root" findmnt -no TARGET -T "$path" || true)"
 
    if [ -z "$source" ]; then
       source="unknown"
@@ -82,6 +108,10 @@ print_mount_and_df() {
 
    if [ -z "$fstype" ]; then
       fstype="unknown"
+   fi
+
+   if [ -z "$target" ]; then
+      target="$path"
    fi
 
    total="$(df_value size "$path" "$use_root")"
@@ -96,8 +126,8 @@ print_mount_and_df() {
    echo "Used:       $(human_bytes "$used")"
    echo "Available:  $(human_bytes "$avail")"
    echo "Use:        $pcent"
-   echo
-   run_maybe_root "$use_root" df -h "$path"
+
+   print_precise_df_table "$source" "$fstype" "$total" "$used" "$avail" "$pcent" "$target"
 }
 
 print_zfs_view() {
@@ -108,6 +138,18 @@ print_zfs_view() {
    local zpool_name
    local zfs_cmd
    local zpool_cmd
+   local dataset_line
+   local pool_line
+   local name
+   local used
+   local avail
+   local refer
+   local mountpoint
+   local size
+   local alloc
+   local free
+   local cap
+   local health
 
    path="$1"
    use_root="$2"
@@ -133,12 +175,26 @@ print_zfs_view() {
    fi
 
    echo "Dataset:"
-   as_root "$zfs_cmd" list -o name,used,avail,refer,mountpoint "$source"
+   dataset_line="$(as_root "$zfs_cmd" list -H -p -o name,used,avail,refer,mountpoint "$source")"
+   IFS=$'\t' read -r name used avail refer mountpoint <<< "$dataset_line"
+   printf '%-24s %12s %12s %12s %s\n' "NAME" "USED" "AVAIL" "REFER" "MOUNTPOINT"
+   printf '%-24s %12s %12s %12s %s\n' \
+      "$name" "$(human_bytes "$used")" "$(human_bytes "$avail")" "$(human_bytes "$refer")" "$mountpoint"
 
    zpool_name="$(printf '%s\n' "$source" | awk -F/ '{ print $1 }')"
    echo
    echo "Pool:"
-   as_root "$zpool_cmd" list "$zpool_name"
+
+   pool_line="$(as_root "$zpool_cmd" list -H -p -o name,size,alloc,free,cap,health "$zpool_name" 2>/dev/null || true)"
+   if [ -z "$pool_line" ]; then
+      as_root "$zpool_cmd" list "$zpool_name"
+      return
+   fi
+
+   IFS=$'\t' read -r name size alloc free cap health <<< "$pool_line"
+   printf '%-12s %12s %12s %12s %6s %s\n' "NAME" "SIZE" "ALLOC" "FREE" "CAP" "HEALTH"
+   printf '%-12s %12s %12s %12s %6s %s\n' \
+      "$name" "$(human_bytes "$size")" "$(human_bytes "$alloc")" "$(human_bytes "$free")" "$cap" "$health"
 }
 
 nextcloud_occ_path() {
@@ -163,6 +219,38 @@ nextcloud_occ_path() {
 
    echo "error: nextcloud-occ was not found." >&2
    exit 1
+}
+
+print_user_storage_precise() {
+   local occ
+   local user_id
+   local line
+   local key
+   local value
+
+   occ="$1"
+   user_id="$2"
+
+   as_root "$occ" user:info "$user_id" | while IFS= read -r line; do
+      case "$line" in
+         "  - enabled:"*|"  - quota:"*|"  - storage:")
+            printf '%s\n' "$line"
+            ;;
+         "    - free:"*|"    - used:"*|"    - total:"*)
+            key="$(printf '%s\n' "$line" | sed -E 's/^    - ([^:]+):.*/\1/')"
+            value="$(printf '%s\n' "$line" | sed -E 's/^    - [^:]+: *//')"
+
+            if [[ "$value" =~ ^[0-9]+$ ]]; then
+               printf '    - %s: %s (%s bytes)\n' "$key" "$(human_bytes "$value")" "$value"
+            else
+               printf '%s\n' "$line"
+            fi
+            ;;
+         "    - relative:"*|"    - quota:"*)
+            printf '%s\n' "$line"
+            ;;
+      esac
+   done
 }
 
 show_nextcloud() {
@@ -224,13 +312,7 @@ show_nextcloud() {
 
       echo
       echo "User storage: $user_id"
-      as_root "$occ" user:info "$user_id" | awk '
-         /^  - enabled:/ { print; next }
-         /^  - quota:/ { print; next }
-         /^  - storage:/ { in_storage = 1; print; next }
-         in_storage && /^    - / { print; next }
-         in_storage && !/^    - / { in_storage = 0 }
-      '
+      print_user_storage_precise "$occ" "$user_id"
    done
 }
 
