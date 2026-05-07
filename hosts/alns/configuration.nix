@@ -1,6 +1,11 @@
 # /hosts/alns/configuration.nix
 { config, pkgs, ... }:
-{
+
+let
+   alnsScripts = import ./scripts {
+      inherit config pkgs;
+   };
+in {
    imports = [
       ./disko-config.nix
       ./hardware-configuration.nix
@@ -93,22 +98,26 @@
       ];
    };
 
-   environment.systemPackages = with pkgs; [
-      git
-      usbutils
-      pciutils
+   environment.systemPackages =
+      (with pkgs; [
+         git
+         usbutils
+         pciutils
 
-      # GPU diagnostics
-      libva-utils      # vainfo - check VAAPI
-      intel-gpu-tools  # intel_gpu_top - monitor GPU
-      vulkan-tools     # vulkaninfo
-      clinfo           # OpenCL info
-      ffmpeg           # General media tools
-      nvtopPackages.intel
-      btop
-      speedtest-cli
-      iperf3
-   ];
+         # GPU diagnostics
+         libva-utils      # vainfo - check VAAPI
+         intel-gpu-tools  # intel_gpu_top - monitor GPU
+         vulkan-tools     # vulkaninfo
+         clinfo           # OpenCL info
+         ffmpeg           # General media tools
+         nvtopPackages.intel
+         btop
+         speedtest-cli
+         iperf3
+      ])
+      ++ [
+         alnsScripts.check_storage  # Host-local script: check_storage nextcloud|jellyfin.
+      ];
 
    # Ensure GuC/HuC firmware is available
    hardware.firmware = with pkgs; [

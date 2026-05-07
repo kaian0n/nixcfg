@@ -1,0 +1,270 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+   cat <<EOF
+Usage:
+  check_storage nextcloud
+  check_storage jellyfin
+
+Commands:
+  nextcloud  Show Nextcloud filesystem/ZFS storage and Nextcloud account quota storage.
+  jellyfin   Show available storage on /media, the Jellyfin media disk.
+EOF
+}
+
+as_root() {
+   if [ "$(id -u)" -eq 0 ]; then
+      "$@"
+   else
+      if [ ! -x /run/wrappers/bin/sudo ]; then
+         echo "error: /run/wrappers/bin/sudo was not found; rerun as root." >&2
+         exit 1
+      fi
+      /run/wrappers/bin/sudo "$@"
+   fi
+}
+
+run_maybe_root() {
+   local use_root
+
+   use_root="$1"
+   shift
+
+   if [ "$use_root" = "yes" ]; then
+      as_root "$@"
+   else
+      "$@"
+   fi
+}
+
+human_bytes() {
+   numfmt --to=iec --suffix=B "$1"
+}
+
+df_value() {
+   local field
+   local path
+   local use_root
+
+   field="$1"
+   path="$2"
+   use_root="$3"
+
+   run_maybe_root "$use_root" df -B1 "--output=$field" "$path" \
+      | awk 'NR == 2 { print $1 }'
+}
+
+print_mount_and_df() {
+   local path
+   local use_root
+   local source
+   local fstype
+   local total
+   local used
+   local avail
+   local pcent
+
+   path="$1"
+   use_root="$2"
+
+   if ! run_maybe_root "$use_root" test -e "$path"; then
+      echo "error: $path does not exist." >&2
+      exit 1
+   fi
+
+   source="$(run_maybe_root "$use_root" findmnt -no SOURCE -T "$path" || true)"
+   fstype="$(run_maybe_root "$use_root" findmnt -no FSTYPE -T "$path" || true)"
+
+   if [ -z "$source" ]; then
+      source="unknown"
+   fi
+
+   if [ -z "$fstype" ]; then
+      fstype="unknown"
+   fi
+
+   total="$(df_value size "$path" "$use_root")"
+   used="$(df_value used "$path" "$use_root")"
+   avail="$(df_value avail "$path" "$use_root")"
+   pcent="$(run_maybe_root "$use_root" df -h --output=pcent "$path" | awk 'NR == 2 { print $1 }')"
+
+   echo "Path:       $path"
+   echo "Filesystem: $source"
+   echo "Type:       $fstype"
+   echo "Total:      $(human_bytes "$total")"
+   echo "Used:       $(human_bytes "$used")"
+   echo "Available:  $(human_bytes "$avail")"
+   echo "Use:        $pcent"
+   echo
+   run_maybe_root "$use_root" df -h "$path"
+}
+
+print_zfs_view() {
+   local path
+   local use_root
+   local source
+   local fstype
+   local zpool_name
+   local zfs_cmd
+   local zpool_cmd
+
+   path="$1"
+   use_root="$2"
+
+   zfs_cmd="$(command -v zfs || true)"
+   zpool_cmd="$(command -v zpool || true)"
+
+   if [ -z "$zfs_cmd" ] || [ -z "$zpool_cmd" ]; then
+      echo "ZFS view: zfs/zpool commands are not available in PATH."
+      return
+   fi
+
+   source="$(run_maybe_root "$use_root" findmnt -no SOURCE -T "$path" || true)"
+   fstype="$(run_maybe_root "$use_root" findmnt -no FSTYPE -T "$path" || true)"
+
+   if [ -z "$fstype" ]; then
+      fstype="unknown"
+   fi
+
+   if [ "$fstype" != "zfs" ]; then
+      echo "ZFS view: not applicable; $path is on filesystem type '$fstype'."
+      return
+   fi
+
+   echo "Dataset:"
+   as_root "$zfs_cmd" list -o name,used,avail,refer,mountpoint "$source"
+
+   zpool_name="$(printf '%s\n' "$source" | awk -F/ '{ print $1 }')"
+   echo
+   echo "Pool:"
+   as_root "$zpool_cmd" list "$zpool_name"
+}
+
+nextcloud_occ_path() {
+   local env_occ
+
+   if env_occ="$(printenv NEXTCLOUD_OCC 2>/dev/null)"; then
+      if [ -n "$env_occ" ]; then
+         printf '%s\n' "$env_occ"
+         return
+      fi
+   fi
+
+   if [ -x /run/current-system/sw/bin/nextcloud-occ ]; then
+      printf '%s\n' /run/current-system/sw/bin/nextcloud-occ
+      return
+   fi
+
+   if command -v nextcloud-occ >/dev/null 2>&1; then
+      command -v nextcloud-occ
+      return
+   fi
+
+   echo "error: nextcloud-occ was not found." >&2
+   exit 1
+}
+
+show_nextcloud() {
+   local occ
+   local data_dir
+   local users
+   local user_ids
+
+   occ="$(nextcloud_occ_path)"
+
+   if ! data_dir="$(as_root "$occ" config:system:get datadirectory 2>/dev/null)"; then
+      data_dir="/var/lib/nextcloud/data"
+   fi
+
+   if [ -z "$data_dir" ]; then
+      data_dir="/var/lib/nextcloud/data"
+   fi
+
+   if [ ! -d "$data_dir" ] && [ -d /var/lib/nextcloud/data ]; then
+      data_dir="/var/lib/nextcloud/data"
+   fi
+
+   echo "Nextcloud storage"
+   echo "================="
+   echo
+   echo "1. Server/filesystem view"
+   echo "   Real disk space available to Nextcloud's data directory."
+   echo
+   print_mount_and_df "$data_dir" yes
+
+   echo
+   echo "2. ZFS dataset/pool view"
+   echo "   ZFS view for the dataset backing the Nextcloud data directory."
+   echo
+   print_zfs_view "$data_dir" yes
+
+   echo
+   echo "3. Nextcloud account/quota view"
+   echo "   What Nextcloud thinks each account is allowed to use."
+   echo
+
+   if ! users="$(as_root "$occ" user:list 2>/dev/null)"; then
+      echo "Could not read Nextcloud users through occ." >&2
+      exit 1
+   fi
+
+   printf '%s\n' "$users"
+
+   user_ids="$(printf '%s\n' "$users" | sed -n 's/^  - \([^:]*\):.*/\1/p')"
+
+   if [ -z "$user_ids" ]; then
+      return
+   fi
+
+   printf '%s\n' "$user_ids" | while IFS= read -r user_id; do
+      if [ -z "$user_id" ]; then
+         continue
+      fi
+
+      echo
+      echo "User storage: $user_id"
+      as_root "$occ" user:info "$user_id" | awk '
+         /^  - enabled:/ { print; next }
+         /^  - quota:/ { print; next }
+         /^  - storage:/ { in_storage = 1; print; next }
+         in_storage && /^    - / { print; next }
+         in_storage && !/^    - / { in_storage = 0 }
+      '
+   done
+}
+
+show_jellyfin() {
+   local media_dir
+
+   media_dir="/media"
+
+   echo "Jellyfin storage"
+   echo "================"
+   echo
+   echo "Media directory: $media_dir"
+   echo "Disk space available to Jellyfin's /media mount."
+   echo
+   print_mount_and_df "$media_dir" no
+}
+
+if [ "$#" -ne 1 ]; then
+   usage
+   exit 2
+fi
+
+case "$1" in
+   nextcloud)
+      show_nextcloud
+      ;;
+   jellyfin)
+      show_jellyfin
+      ;;
+   -h|--help|help)
+      usage
+      ;;
+   *)
+      usage
+      exit 2
+      ;;
+esac
