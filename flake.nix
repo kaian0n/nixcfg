@@ -19,18 +19,13 @@
          inputs.nixpkgs.follows = "nixpkgs";
       };
 
-      dotfiles = {
-         url = "github:kaian0n/dotfiles";
-         flake = false;
-      };
-
       agenix = {
          url = "github:ryantm/agenix";
          inputs.nixpkgs.follows = "nixpkgs";
       };
    };
 
-   outputs = { self, disko, dotfiles, home-manager, nixpkgs, nixpkgs-unstable, agenix, ... } @ inputs:
+   outputs = { self, disko, home-manager, nixpkgs, nixpkgs-unstable, agenix, ... } @ inputs:
    let
       inherit (self) outputs;
       lib = nixpkgs.lib;
